@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h2>🔐 관리자 로그인</h2>
+
+<input type="password" id="adminPw" placeholder="관리자 비밀번호">
+<button onclick="login()">로그인</button>
+
+<p id="msg"></p>
+
+<script>
+function login() {
+  const pw = document.getElementById("adminPw").value;
+  const msg = document.getElementById("msg");
+
+  if (pw === "mcbadmin") {
+    localStorage.setItem("isAdmin", "true");
+    sessionStorage.setItem("adminSession", "true");
+    location.href = "/";
+  } else {
+    msg.textContent = "비밀번호가 틀렸습니다";
+  }
+}
+
+function logout() {
+  localStorage.removeItem("isAdmin");
+  sessionStorage.removeItem("adminSession");
+  alert("로그아웃 되었습니다");
+  location.reload();
+}
+
+
+</script>
+
+</body>
+</html>

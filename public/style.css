@@ -1,0 +1,285 @@
+/* ===== 기본 설정 ===== */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 30px;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+/* ===== 제목 ===== */
+h2 {
+  margin-top: 30px;
+  margin-bottom: 10px;
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+
+h3 {
+  margin-top: 30px;
+  margin-bottom: 10px;
+  font-size: 18px;
+  color: #facc15;
+}
+
+/* ===== 팀 영역 ===== */
+.team {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 15px;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.team:nth-of-type(1) {
+  background: linear-gradient(135deg, #1e3a8a, #1e40af);
+}
+
+.team:nth-of-type(2) {
+  background: linear-gradient(135deg, #7f1d1d, #991b1b);
+}
+
+/* ===== 셀렉트 박스 ===== */
+select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  background: #020617;
+  color: #e5e7eb;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+select:focus {
+  outline: 2px solid #38bdf8;
+}
+
+/* ===== 버튼 ===== */
+button {
+  padding: 10px 18px;
+  margin-right: 8px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+/* 승리 버튼 */
+button:nth-of-type(1) {
+  background: #2563eb;
+  color: white;
+}
+
+button:nth-of-type(2) {
+  background: #dc2626;
+  color: white;
+}
+
+/* 저장 버튼 */
+button:nth-of-type(3) {
+  background: #16a34a;
+  color: white;
+}
+
+/* ===== 입력 ===== */
+input {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  width: 220px;
+  margin-right: 8px;
+  background: #020617;
+  color: #e5e7eb;
+}
+
+/* 날짜 선택 (확실히 동작하게) */
+#matchDate {
+  background-color: #ffffff;
+  color: #020617;
+  pointer-events: auto;
+  appearance: auto;
+  -webkit-appearance: auto;
+}
+
+/* ===== 통계 테이블 ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  background: #020617;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+th {
+  background: #020617;
+  color: #facc15;
+  padding: 10px;
+  font-size: 13px;
+  text-align: center;
+}
+
+td {
+  padding: 10px;
+  text-align: center;
+  font-size: 13px;
+  border-top: 1px solid #1e293b;
+}
+
+tr:hover {
+  background: #1e293b;
+}
+
+/* ===== 전체 통계 선수 이름 ===== */
+#stats a {
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+#stats a:hover {
+  color: #ffd966;
+  text-decoration: underline;
+}
+
+/* ===== 날짜별 내전 기록 (블루 톤 통일) ===== */
+#dateList {
+  margin-bottom: 12px;
+}
+
+#dateList .date-btn {
+  background-color: #2c3e50;
+  color: #a8d8ff;
+  border: 1px solid #3f5c7a;
+  padding: 6px 12px;
+  margin: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#dateList .date-btn:hover {
+  background-color: #3f5c7a;
+  color: #ffffff;
+}
+
+#dateMatches table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #1e2a36;
+  color: #a8d8ff;
+  margin-top: 10px;
+}
+
+#dateMatches th {
+  background-color: #243447;
+  color: #ffffff;
+  padding: 8px;
+  border-bottom: 1px solid #3f5c7a;
+}
+
+#dateMatches td {
+  padding: 8px;
+  border-bottom: 1px solid #2f445a;
+  text-align: center;
+}
+
+#dateMatches tr:hover {
+  background-color: #2f445a;
+}
+
+/* ===== 모달 ===== */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+}
+
+.modal-content {
+  background: #020617;
+  margin: 8% auto;
+  padding: 20px;
+  width: 80%;
+  max-width: 800px;
+  border-radius: 12px;
+}
+
+.close {
+  float: right;
+  font-size: 24px;
+  cursor: pointer;
+  color: #facc15;
+}
+
+/* ===== 관리자 레이아웃 ===== */
+.admin-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+}
+
+.admin-sidebar,
+.admin-main {
+  background: #020617;
+  border: 1px solid #1e293b;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+/* 플레이어 목록 (가로 카드) */
+#playerList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 6px;
+  padding: 0;
+  list-style: none;
+}
+
+#playerList li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  font-size: 12px;
+  border: 1px solid #1e293b;
+  border-radius: 999px;
+  background-color: #020617;
+}
+
+#playerList li:hover {
+  background-color: #facc15;
+  color: #020617;
+}
+
+#playerList button {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background-color: #7f1d1d;
+}
+
+/* ===== 반응형 ===== */
+@media (max-width: 900px) {
+  .team {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>MCB Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<script>
+  if (localStorage.getItem("isAdmin") !== "true") {
+    alert("관리자만 접근 가능합니다");
+    location.href = "/";
+  }
+</script>
+
+<h2>🛠 관리자 페이지</h2>
+<button onclick="location.href='/'">← 메인으로</button>
+
+<hr>
+
+<div class="admin-layout">
+
+  <!-- 좌측: 플레이어 관리 -->
+  <div class="admin-sidebar">
+    <h3>🧑‍🤝‍🧑 플레이어</h3>
+
+    <div class="player-add">
+      <input id="newPlayerName" placeholder="이름">
+      <button onclick="addPlayer()">+</button>
+    </div>
+
+    <ul id="playerList"></ul>
+  </div>
+
+  <!-- 우측: 경기 목록 -->
+  <div class="admin-main">
+    <h3>🎮 경기 목록</h3>
+    <div id="matchList"></div>
+  </div>
+
+</div>
+
+<script src="admin.js"></script>
+
+<script>
+function editMatchFromAdmin(matchId) {
+  sessionStorage.setItem("editMatchId", matchId);
+  location.href = "/";
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>MCB Scrim Stats</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="topBar">
+  <button id="loginBtn" onclick="goLogin()">🔐 관리자 로그인</button>
+  <button id="logoutBtn" onclick="logout()">🔓 로그아웃</button>
+</div>
+
+<!-- ===== 관리자 전용 영역 ===== -->
+<div id="adminArea">
+
+  <label>
+    📅 경기 날짜:
+    <input type="date" id="matchDate">
+  </label>
+
+  <label>
+    🗺 맵:
+    <input type="text" id="mapName" >
+  </label>
+
+
+
+
+
+  <h2>TEAM A</h2>
+  <div class="team">
+    <select class="slot" data-team="A" data-role="Tank"></select>
+    <select class="slot" data-team="A" data-role="DPS"></select>
+    <select class="slot" data-team="A" data-role="DPS"></select>
+    <select class="slot" data-team="A" data-role="Healer"></select>
+    <select class="slot" data-team="A" data-role="Healer"></select>
+      <label>
+     밴픽:
+    <input type="text" id="banA">
+  </label>
+  </div>
+
+
+  <h2>TEAM B</h2>
+  <div class="team">
+    <select class="slot" data-team="B" data-role="Tank"></select>
+    <select class="slot" data-team="B" data-role="DPS"></select>
+    <select class="slot" data-team="B" data-role="DPS"></select>
+    <select class="slot" data-team="B" data-role="Healer"></select>
+    <select class="slot" data-team="B" data-role="Healer"></select>
+    <label>
+    밴픽:
+    <input type="text" id="banB">
+  </label>
+  </div>
+
+
+  <button onclick="setWinner('A')">TEAM A 승리</button>
+  <button onclick="setWinner('B')">TEAM B 승리</button>
+  <button id="saveBtn" onclick="saveMatch()">💾 저장</button>
+
+  <br><br>
+<div id="adminNav">
+  <button onclick="goAdmin()">🛠 관리자 페이지로 이동</button>
+</div>
+  <hr>
+</div>
+
+<!-- ===== 공개 영역 ===== -->
+<div id="dateSection">
+  <h3>📅 날짜별 내전 기록</h3>
+  <div id="dateList"></div>
+  <div id="dateMatches"></div>
+</div>
+
+<div id="statsSection">
+  <h3>📊 전체 통계</h3>
+  <div id="stats"></div>
+</div>
+<script src="script.js"></script>
+
+<!-- ===== 선수 상세 모달 ===== -->
+<div id="playerModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal()">&times;</span>
+    <h3 id="modalTitle"></h3>
+    <table id="modalTable"></table>
+  </div>
+</div>
+
+</body>
+</html>
