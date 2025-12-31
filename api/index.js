@@ -97,27 +97,53 @@ app.post("/api/match", async (req, res) => {
 app.get("/api/stats", async (req, res) => {
   const date = req.query.date;
 
+  // 날짜로 match_id 필터링
+  let matchIds = null;
+  
+  if (date) {
+    const startTime = `${date}T00:00:00.000Z`;
+    const endTime = `${date}T23:59:59.999Z`;
+    
+    const { data: matches, error: matchError } = await supabase
+      .from("matches")
+      .select("id")
+      .gte("created_at", startTime)
+      .lte("created_at", endTime);
+    
+    if (matchError) return res.status(500).json(matchError);
+    
+    matchIds = matches.map(m => m.id);
+    
+    if (matchIds.length === 0) {
+      return res.json([]);
+    }
+  }
+
+  // match_players 조회
   let query = supabase
     .from("match_players")
     .select(`
       result,
       role,
       team,
-      players(id, name),
-      matches(created_at)
+      match_id,
+      players(id, name)
     `);
 
-  if (date) {
-    query = query.eq("matches.created_at", date);
+  if (matchIds) {
+    query = query.in("match_id", matchIds);
   }
 
   const { data, error } = await query;
+  
   if (error) return res.status(500).json(error);
 
   const stats = {};
 
   data.forEach(r => {
     const p = r.players;
+    if (!p || !p.id) return;
+    
     if (!stats[p.id]) {
       stats[p.id] = {
         id: p.id,
@@ -143,6 +169,7 @@ app.get("/api/stats", async (req, res) => {
   res.json(Object.values(stats));
 });
 
+
 /* =========================
    날짜 목록
 ========================= */
@@ -154,9 +181,52 @@ app.get("/api/match-dates", async (req, res) => {
 
   if (error) return res.status(500).json(error);
 
-  const dates = [...new Set(data.map(d => d.created_at))];
-  res.json(dates.map(d => ({ match_date: d })));
+  const dates = [...new Set(
+  data.map(d => d.created_at.slice(0, 10))
+)];
+
+res.json(dates.map(d => ({ match_date: d })));
+
 });
+
+/* =========================
+   날짜별 경기 목록
+========================= */
+app.get("/api/matches/by-date/:date", async (req, res) => {
+  const date = req.params.date;
+
+  const start = `${date}T00:00:00.000Z`;
+  const end   = `${date}T23:59:59.999Z`;
+
+  const { data, error } = await supabase
+    .from("match_players")
+    .select(`
+      team,
+      role,
+      result,
+      players!inner ( name ),
+      matches!inner ( created_at )
+    `)
+    .gte("matches.created_at", start)
+    .lte("matches.created_at", end);
+
+  if (error) {
+    console.error("❌ by-date error:", error);
+    return res.status(500).json(error);
+  }
+
+  // 🔥 null 방어 + 프론트용 변환
+  const rows = data.map(r => ({
+    created_at: r.matches.created_at.slice(0, 10),
+    name: r.players.name,
+    team: r.team,
+    role: r.role,
+    result: r.result
+  }));
+
+  res.json(rows);
+});
+
 
 /* =========================
    선수 상세 (날짜 필터)
@@ -168,27 +238,38 @@ app.get("/api/player/:id/matches", async (req, res) => {
   let query = supabase
     .from("match_players")
     .select(`
-      team,
       role,
+      team,
       result,
-      matches(created_at)
+      matches!inner ( created_at )
     `)
     .eq("player_id", id);
 
-  if (date) {
-    query = query.eq("matches.created_at", date);
-  }
+if (date) {
+  query = query
+    .gte("matches.created_at", `${date}T00:00:00.000Z`)
+    .lte("matches.created_at", `${date}T23:59:59.999Z`);
+}
 
   const { data, error } = await query;
-  if (error) return res.status(500).json(error);
 
-  res.json(data.map(r => ({
+  if (error) {
+    console.error(error);
+    return res.status(500).json(error);
+  }
+
+  const rows = data.map(r => ({
+    created_at: r.matches.created_at,
     team: r.team,
     role: r.role,
-    result: r.result,
-    created_at: r.matches.created_at
-  })));
+    result: r.result
+  }));
+
+  res.json(rows);
 });
+
+//관리자 시작
+
 
 /* =========================
    관리자: 경기 목록
@@ -203,34 +284,101 @@ app.get("/api/admin/matches", async (req, res) => {
   res.json(data);
 });
 
-/* =========================
-   관리자: 경기 수정
-========================= */
-app.put("/api/admin/match/:id", async (req, res) => {
-  const { id } = req.params;
-  const { created_at, map_name, ban_a, ban_b, winner, players } = req.body;
 
-  await supabase
+/* =========================
+   관리자: 경기 삭제
+========================= */
+app.delete("/api/admin/match/:id", async (req, res) => {
+  const { id } = req.params;
+  
+  await supabase.from("match_players").delete().eq("match_id", id);
+  await supabase.from("matches").delete().eq("id", id);
+  
+  res.json({ success: true });
+});
+
+/* =========================
+   관리자: 경기 상세 조회 (수정용)
+========================= */
+app.get("/api/admin/match/:id", async (req, res) => {
+  const { id } = req.params;
+
+  // 경기 정보
+  const { data: match, error: matchError } = await supabase
     .from("matches")
-    .update({ created_at, map_name, ban_a, ban_b, winner })
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (matchError) {
+    console.error("경기 조회 실패:", matchError);
+    return res.status(500).json(matchError);
+  }
+
+  // 참가 선수 정보
+  const { data: players, error: playersError } = await supabase
+    .from("match_players")
+    .select("player_id, team, role, result")
+    .eq("match_id", id);
+
+  if (playersError) {
+    console.error("선수 조회 실패:", playersError);
+    return res.status(500).json(playersError);
+  }
+
+  res.json({ match, players });
+});
+
+/* =========================
+   관리자: 경기 수정 
+========================= */
+app.put("/api/admin/match-full/:id", async (req, res) => {
+  const { id } = req.params;
+  const { winner, created_at, map_name, ban_a, ban_b, entries } = req.body;
+
+  // 경기 정보 업데이트
+  const { error: matchError } = await supabase
+    .from("matches")
+    .update({
+      winner,
+      created_at,
+      map_name,
+      ban_a,
+      ban_b
+    })
     .eq("id", id);
 
+  if (matchError) {
+    console.error("경기 업데이트 실패:", matchError);
+    return res.status(500).json(matchError);
+  }
+
+  // 기존 참가자 삭제
   await supabase.from("match_players").delete().eq("match_id", id);
 
-  const rows = players.map(p => ({
-    match_id: id,
-    player_id: p.player_id,
-    team: p.team,
-    role: p.role,
-    result: p.result
+  // 새 참가자 추가
+  const rows = entries.map(e => ({
+    match_id: Number(id),
+    player_id: e.playerId,
+    team: e.team,
+    role: e.role,
+    result: e.result
   }));
 
-  await supabase.from("match_players").insert(rows);
+  const { error: playersError } = await supabase
+    .from("match_players")
+    .insert(rows);
+
+  if (playersError) {
+    console.error("선수 추가 실패:", playersError);
+    return res.status(500).json(playersError);
+  }
 
   res.json({ success: true });
 });
 
-/* local */
+//완전 중요
+//local
 // const PORT = process.env.PORT || 3000;
 //  app.listen(PORT, () => {
 //  console.log("🚀 Server running on", PORT);
@@ -241,5 +389,4 @@ app.put("/api/admin/match/:id", async (req, res) => {
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
-
 export default app;

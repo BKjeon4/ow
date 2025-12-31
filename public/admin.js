@@ -90,8 +90,22 @@ function loadMatches() {
 
 function deleteMatch(id) {
   if (!confirm("경기를 삭제할까요?")) return;
+  
   fetch(`/api/admin/match/${id}`, { method: "DELETE" })
-    .then(() => loadMatches());
+    .then(res => {
+      if (!res.ok) {
+        throw new Error("삭제 실패");
+      }
+      return res.json();
+    })
+    .then(() => {
+      alert("삭제 완료");
+      loadMatches();
+    })
+    .catch(err => {
+      console.error("삭제 실패:", err);
+      alert("삭제에 실패했습니다");
+    });
 }
 
 /* =========================
