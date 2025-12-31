@@ -241,3 +241,5 @@ app.put("/api/admin/match/:id", async (req, res) => {
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
+
+export default app;
