@@ -1,5 +1,12 @@
 import express from "express";
+import "dotenv/config"
 import { createClient } from "@supabase/supabase-js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 const app = express();
 app.use(express.json());
@@ -223,13 +230,14 @@ app.put("/api/admin/match/:id", async (req, res) => {
   res.json({ success: true });
 });
 
-/* ========================= */
+/* local */
 // const PORT = process.env.PORT || 3000;
-// app.listen(PORT, () => {
-//   console.log("🚀 Server running on", PORT);
-// });
-
-/* 🔥 listen 절대 쓰지 말 것 */
-export default app;
+//  app.listen(PORT, () => {
+//  console.log("🚀 Server running on", PORT);
+//  });
 
 
+// vercel
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/index.html"));
+});
