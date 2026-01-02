@@ -247,95 +247,49 @@ tr:hover {
 
 /* ===== 관리자 레이아웃 ===== */
 .admin-layout {
-  max-width: 1400px;
-  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
 }
 
-.admin-sidebar {
-  background: #020617;
-  border: 1px solid #1e293b;
-  padding: 20px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-}
-
+.admin-sidebar,
 .admin-main {
   background: #020617;
   border: 1px solid #1e293b;
-  padding: 20px;
+  padding: 12px;
   border-radius: 12px;
 }
 
-/* ===== 플레이어 관리 섹션 ===== */
-.player-add {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 30px;
-}
-
-.player-add input {
-  width: 200px;
-}
-
-.player-add button {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  font-size: 20px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #2563eb;
-  color: white;
-}
-
-/* 플레이어 목록 (가로 그리드 배치) */
+/* 플레이어 목록 (가로 카드) */
 #playerList {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 6px;
   padding: 0;
   list-style: none;
-  max-width: 1400px;
-  margin: 0 auto;
 }
 
 #playerList li {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  padding: 12px;
-  font-size: 14px;
-  font-weight: 600;
+  padding: 4px 8px;
+  font-size: 12px;
   border: 1px solid #1e293b;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #1e293b, #0f172a);
-  transition: all 0.2s ease;
-  gap: 8px;
+  border-radius: 999px;
+  background-color: #020617;
 }
 
 #playerList li:hover {
-  background: linear-gradient(135deg, #2563eb, #1e40af);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  background-color: #facc15;
+  color: #020617;
 }
 
 #playerList button {
   font-size: 11px;
-  padding: 4px 12px;
+  padding: 2px 6px;
   border-radius: 999px;
-  background-color: #dc2626;
-  color: white;
-  margin: 0;
-  width: 100%;
-}
-
-#playerList button:hover {
-  background-color: #991b1b;
+  background-color: #7f1d1d;
 }
 
 /* 관리자 */
@@ -343,7 +297,7 @@ tr:hover {
   max-width: 400px;
   margin: 100px auto;
   padding: 30px;
-  background: white;
+  background: rgb(255, 255, 255);
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
@@ -382,27 +336,20 @@ tr:hover {
 
 .tabs {
   display: flex;
-  justify-content: center;
   gap: 10px;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
 .tab-btn {
   padding: 10px 20px;
-  background: #1e293b;
+  background: #f0f0f0;
   border: none;
   cursor: pointer;
-  border-radius: 8px;
-  color: #e5e7eb;
-  transition: all 0.2s ease;
-}
-
-.tab-btn:hover {
-  background: #334155;
+  border-radius: 5px 5px 0 0;
 }
 
 .tab-btn.active {
-  background: #2563eb;
+  background: #4CAF50;
   color: white;
 }
 
@@ -415,9 +362,9 @@ tr:hover {
 }
 
 .admin-add {
-  background: #1e293b;
-  padding: 20px;
-  border-radius: 8px;
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 5px;
   margin-bottom: 20px;
 }
 
@@ -427,25 +374,8 @@ tr:hover {
 }
 
 /* ===== 반응형 ===== */
-@media (max-width: 1200px) {
-  #playerList {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  }
-}
-
 @media (max-width: 900px) {
   .team {
     grid-template-columns: 1fr;
-  }
-  
-  #playerList {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 8px;
-  }
-}
-
-@media (max-width: 600px) {
-  #playerList {
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
   }
 }
