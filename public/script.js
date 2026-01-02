@@ -1,9 +1,16 @@
 /*************************************************
  * 전역 상태
  *************************************************/
-if (!sessionStorage.getItem("adminSession")) {
+let adminInfo = null;
+
+// 관리자 세션 확인
+const adminSession = sessionStorage.getItem("adminSession");
+if (adminSession) {
+  adminInfo = JSON.parse(adminSession);
+} else {
   localStorage.removeItem("isAdmin");
 }
+
 
 let players = [];
 let winnerTeam = null;
@@ -45,7 +52,7 @@ function goLogin() {
 function logout() {
   localStorage.removeItem("isAdmin");
   sessionStorage.removeItem("adminSession");
-  alert("로그아웃 되었습니다");
+  alert("Logged out");
   location.reload();
 }
 
@@ -58,7 +65,7 @@ function loadPlayers() {
     .then(data => {
       players = data;
       slots.forEach(slot => {
-        slot.innerHTML = `<option value="">-- 선택 --</option>`;
+        slot.innerHTML = `<option value="">-- Select --</option>`;
         players.forEach(p => {
           const opt = document.createElement("option");
           opt.value = p.id;
@@ -74,7 +81,7 @@ function loadPlayers() {
  *************************************************/
 function setWinner(team) {
   winnerTeam = team;
-  alert(`TEAM ${team} 승리 선택`);
+  alert(`TEAM ${team} Win Selected`);
 }
 
 /*************************************************
@@ -87,7 +94,7 @@ function editMatch(matchId) {
   isEditMode = true;
 
   // UI 전환
-  document.getElementById("saveBtn").textContent = "수정 완료";
+  document.getElementById("saveBtn").textContent = "Update";
   
   // 뒤로가기 버튼 표시
   const backBtn = document.getElementById("backBtn");
@@ -108,8 +115,8 @@ function editMatch(matchId) {
       return res.json();
     })
     .then(({ match, players }) => {
-      console.log("✅ 받은 경기 데이터:", match);
-      console.log("✅ 받은 선수 데이터:", players);
+      console.log("✅ Match data received:", match);
+      console.log("✅ Player data received:", players);
 
       // ⭐ 날짜 형식 변환 (ISO → datetime-local)
       let formattedDate = match.created_at;
@@ -126,7 +133,7 @@ function editMatch(matchId) {
 
       winnerTeam = match.winner;
 
-      // ⭐⭐⭐ 슬롯 완전 초기화 (중요!)
+      // ⭐⭐⭐ 슬롯 완전 초기화
       slots.forEach(s => {
         s.value = "";
         s.selectedIndex = 0;
@@ -145,14 +152,14 @@ function editMatch(matchId) {
         if (role === "Support") role = "Healer";
 
         if (!grouped[p.team] || !grouped[p.team][role]) {
-          console.warn("⚠️ 잘못된 팀/역할:", p);
+          console.warn("⚠️ Invalid team/role:", p);
           return;
         }
 
         grouped[p.team][role].push(p.player_id);
       });
 
-      console.log("📊 그룹화된 데이터:", grouped);
+      console.log("📊 Grouped data:", grouped);
 
       // ⭐⭐⭐ 슬롯을 배열로 변환하고 인덱스로 관리
       const slotArray = Array.from(slots);
@@ -181,7 +188,7 @@ function editMatch(matchId) {
           if (slot && grouped[team][role].length > 0) {
             const playerId = grouped[team][role].shift();
             slot.value = playerId;
-            console.log(`✅ ${team} ${role} 슬롯에 ${playerId} 배치`);
+            console.log(`✅ ${team} ${role} slot filled with ${playerId}`);
           }
           
           roleCount[role]++;
@@ -191,8 +198,8 @@ function editMatch(matchId) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     })
     .catch(err => {
-      console.error("❌ 경기 로드 실패:", err);
-      alert("경기 정보를 불러오는데 실패했습니다: " + err.message);
+      console.error("❌ Failed to load match:", err);
+      alert("Failed to load match info: " + err.message);
       
       // 에러 시 원래 상태로 복구
       cancelEdit();
@@ -204,7 +211,7 @@ function editMatch(matchId) {
  *************************************************/
 function cancelEdit() {
   if (isEditMode) {
-    if (!confirm("수정을 취소하고 관리자 페이지로 돌아가시겠습니까?")) {
+    if (!confirm("Cancel editing and return to admin page?")) {
       return;
     }
   }
@@ -215,7 +222,7 @@ function cancelEdit() {
   winnerTeam = null;
   
   // UI 복구
-  document.getElementById("saveBtn").textContent = "💾 저장";
+  document.getElementById("saveBtn").textContent = "💾 Save";
   const backBtn = document.getElementById("backBtn");
   if (backBtn) {
     backBtn.style.display = "none";
@@ -245,8 +252,9 @@ function cancelEdit() {
  * 경기 저장 (신규 / 수정 공용)
  *************************************************/
 function saveMatch() {
-  if (!isAdmin) return alert("관리자만 가능합니다");
-  if (!winnerTeam) return alert("승리 팀을 선택해주세요");
+  if (!isAdmin) return alert("Admin only");
+  if (!adminInfo) return alert("Admin info not found. Please log in again");
+  if (!winnerTeam) return alert("Please select winning team");
 
   // ⭐ 유효성 검사
   const matchDate = document.getElementById("matchDate").value;
@@ -256,17 +264,17 @@ function saveMatch() {
 
   // 날짜 체크
   if (!matchDate) {
-    return alert("경기 날짜를 선택해주세요");
+    return alert("Please select match date");
   }
 
   // 맵 체크
   if (!mapName) {
-    return alert("맵 이름을 입력해주세요");
+    return alert("Please enter map name");
   }
 
   // 밴픽 체크
   if (!banA || !banB) {
-    return alert("양 팀의 밴픽을 모두 입력해주세요");
+    return alert("Please enter bans for both teams");
   }
 
   // 선수 선택 및 중복 체크
@@ -278,13 +286,13 @@ function saveMatch() {
     
     // 선수 미선택 체크
     if (!playerId) {
-      return alert("모든 슬롯에 선수를 선택해주세요");
+      return alert("Please select all players");
     }
 
     // 중복 선수 체크
     if (selectedPlayers.includes(playerId)) {
       const playerName = slot.options[slot.selectedIndex].text;
-      return alert(`${playerName} 선수가 중복 선택되었습니다`);
+      return alert(`${playerName} is selected multiple times`);
     }
 
     selectedPlayers.push(playerId);
@@ -297,14 +305,26 @@ function saveMatch() {
     });
   }
 
+  // ⭐ datetime-local 값을 로컬 시간대 유지하면서 ISO 형식으로 변환
+  const localDate = new Date(matchDate);
+  const offsetMs = localDate.getTimezoneOffset() * 60000;
+  const utcDate = new Date(localDate.getTime() - offsetMs);
+  const created_at = utcDate.toISOString();
+  
+  console.log("Input time:", matchDate);
+  console.log("Local Date:", localDate);
+  console.log("Convert to UTC:", created_at);
+  
   // ⭐ 모든 검사 통과 후 저장
   const body = {
     winner: winnerTeam,
-    created_at: matchDate,
+    created_at: created_at,
     map_name: mapName,
     ban_a: banA,
     ban_b: banB,
-    entries: entries
+    entries: entries,
+    admin_id: adminInfo.id,
+    admin_name: adminInfo.name
   };
 
   const url = isEditMode
@@ -318,7 +338,7 @@ function saveMatch() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
   }).then(() => {
-    alert(isEditMode ? "경기 수정 완료" : "경기 저장 완료");
+    alert(isEditMode ? "Match updated" : "Match saved");
 
     // 수정 모드였으면 관리자 페이지로 이동
     if (isEditMode) {
@@ -356,8 +376,8 @@ function loadStats(date = null) {
       renderStats(rows);
     })
     .catch(err => {
-      console.error("통계 로드 실패:", err);
-      alert("통계를 불러오는데 실패했습니다.");
+      console.error("Failed to load stats:", err);
+      alert("Failed to load statistics");
     });
 }
 
@@ -368,14 +388,14 @@ function renderStats(rows) {
   let html = `
     <table>
       <tr>
-       <th onclick="sortBy('name')">ID ⬍</th>
-        <th onclick="sortBy('games')">출전 ⬍</th>
-        <th>탱</th>
-        <th>딜</th>
-        <th>힐</th>
-        <th>승</th>
-        <th>패</th>
-        <th onclick="sortBy('winrate')">승률 ⬍</th>
+       <th onclick="sortBy('name')">Player ⬍</th>
+        <th onclick="sortBy('games')">Games ⬍</th>
+        <th>Tank</th>
+        <th>DPS</th>
+        <th>Support</th>
+        <th>Win</th>
+        <th>Loss</th>
+        <th onclick="sortBy('winrate')">Win Rate ⬍</th>
       </tr>
   `;
 
@@ -405,9 +425,7 @@ function renderStats(rows) {
   document.getElementById("stats").innerHTML = html;
 }
 
-/*************************************************
- * 정렬
- *************************************************/
+
 /*************************************************
  * 정렬
  *************************************************/
@@ -426,11 +444,9 @@ function sortBy(key) {
       va = a.games ? a.wins / a.games : 0;
       vb = b.games ? b.wins / b.games : 0;
     } else if (key === "name") {
-      // ⭐ 이름(문자열) 정렬
-      va = a.name.toLowerCase(); // 대소문자 구분 없이
+      va = a.name.toLowerCase();
       vb = b.name.toLowerCase();
       
-      // 문자열 비교
       if (currentSort.asc) {
         return va < vb ? -1 : va > vb ? 1 : 0;
       } else {
@@ -460,18 +476,16 @@ function loadMatchDates() {
       // ✅ 전체 조회 버튼
       const allBtn = document.createElement("button");
       allBtn.className = "date-btn";
-      allBtn.textContent = "전체 조회";
+      allBtn.textContent = "All Matches";
       allBtn.addEventListener("click", () => {
         currentDateFilter = null;
-        loadStats(null);  // null을 명시적으로 전달
+        loadStats(null);
         
-        // 모든 버튼 활성화 해제
         document.querySelectorAll(".date-btn").forEach(b => b.classList.remove("active"));
         allBtn.classList.add("active");
       });
       box.appendChild(allBtn);
 
-      // 기본적으로 전체 조회 버튼 활성화
       if (!currentDateFilter) {
         allBtn.classList.add("active");
       }
@@ -482,7 +496,6 @@ function loadMatchDates() {
         btn.className = "date-btn";
         btn.textContent = d.match_date;
 
-        // 현재 선택된 날짜면 활성화
         if (currentDateFilter === d.match_date) {
           btn.classList.add("active");
         }
@@ -491,7 +504,6 @@ function loadMatchDates() {
           currentDateFilter = d.match_date;
           loadStats(d.match_date);
           
-          // 모든 버튼 활성화 해제 후 현재 버튼만 활성화
           document.querySelectorAll(".date-btn").forEach(b => b.classList.remove("active"));
           btn.classList.add("active");
         });
@@ -503,11 +515,11 @@ function loadMatchDates() {
 
 
 /*************************************************
- * 선수 모달 (날짜 필터 적용)
+ * 선수 모달
  *************************************************/
 function openPlayerModal(playerId, playerName) {
   document.getElementById("modalTitle").textContent =
-    `${playerName} 경기 상세`;
+    `${playerName} Match Details`;
 
   const query = currentDateFilter
     ? `?date=${currentDateFilter}`
@@ -518,10 +530,10 @@ function openPlayerModal(playerId, playerName) {
     .then(rows => {
       let html = `
         <tr>
-          <th>날짜</th>
-          <th>팀</th>
-          <th>역할</th>
-          <th>결과</th>
+          <th>Date</th>
+          <th>Team</th>
+          <th>Role</th>
+          <th>Result</th>
         </tr>
       `;
 
@@ -552,5 +564,3 @@ function closeModal() {
 function goAdmin() {
   location.href = "/admin.html";
 }
-
-

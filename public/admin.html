@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>MCB Admin</title>
@@ -9,41 +9,103 @@
 
 <script>
   if (localStorage.getItem("isAdmin") !== "true") {
-    alert("관리자만 접근 가능합니다");
+    alert("Admin access only");
     location.href = "/";
   }
+  
+  const adminSession = sessionStorage.getItem("adminSession");
+  if (!adminSession) {
+    alert("Please log in again");
+    localStorage.removeItem("isAdmin");
+    location.href = "/admin-login.html";
+  }
+  
+  const adminInfo = JSON.parse(adminSession);
 </script>
 
-<h2>🛠 관리자 페이지</h2>
-<button onclick="location.href='/'">← 메인으로</button>
+<h2>🛠 Admin Page</h2>
+<p>Logged in: <strong id="adminName"></strong> <button onclick="logout()">Logout</button></p>
+<button onclick="location.href='/'">← Back to Main</button>
 
 <hr>
 
+<!-- Tab Menu -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('players')">Player Management</button>
+  <button class="tab-btn" onclick="showTab('matches')">Match Management</button>
+  <button class="tab-btn" onclick="showTab('admins')">Admin Management</button>
+  <button class="tab-btn" onclick="showTab('logs')">Activity Logs</button>
+</div>
+
 <div class="admin-layout">
 
-  <!-- 좌측: 플레이어 관리 -->
-  <div class="admin-sidebar">
-    <h3>🧑‍🤝‍🧑 플레이어</h3>
-
-    <div class="player-add">
-      <input id="newPlayerName" placeholder="이름">
-      <button onclick="addPlayer()">+</button>
+  <!-- Player Management Tab -->
+  <div id="tab-players" class="tab-content active">
+    <div class="admin-sidebar">
+      <h3>🧑‍🤝‍🧑 Players</h3>
+      <div class="player-add">
+        <input id="newPlayerName" placeholder="Name">
+        <button onclick="addPlayer()">+</button>
+      </div>
+      <ul id="playerList"></ul>
     </div>
-
-    <ul id="playerList"></ul>
   </div>
 
-  <!-- 우측: 경기 목록 -->
-  <div class="admin-main">
-    <h3>🎮 경기 목록</h3>
-    <div id="matchList"></div>
+  <!-- Match Management Tab -->
+  <div id="tab-matches" class="tab-content">
+    <div class="admin-main">
+      <h3>🎮 Match List</h3>
+      <div id="matchList"></div>
+    </div>
+  </div>
+
+  <!-- Admin Management Tab -->
+  <div id="tab-admins" class="tab-content">
+    <h3>👥 Admin List</h3>
+    
+    <div class="admin-add">
+      <h4>Add New Admin</h4>
+      <input id="newAdminUsername" placeholder="Username" style="width: 150px">
+      <input id="newAdminPassword" type="password" placeholder="Password" style="width: 150px">
+      <input id="newAdminName" placeholder="Name" style="width: 150px">
+      <button onclick="addAdmin()">Add</button>
+    </div>
+    
+    <div id="adminList"></div>
+  </div>
+
+  <!-- Activity Logs Tab -->
+  <div id="tab-logs" class="tab-content">
+    <h3>📋 Activity Logs (Last 100)</h3>
+    <div id="logList"></div>
   </div>
 
 </div>
 
-<script src="/admin.js"></script>
+<script src="/admin.js?v=3"></script>
 
 <script>
+document.getElementById("adminName").textContent = adminInfo.name;
+
+function showTab(tabName) {
+  document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+  
+  document.getElementById(`tab-${tabName}`).classList.add("active");
+  event.target.classList.add("active");
+  
+  if (tabName === 'admins') loadAdmins();
+  if (tabName === 'logs') loadLogs();
+  if (tabName === 'matches') loadMatches();
+  if (tabName === 'players') loadPlayers();
+}
+
+function logout() {
+  localStorage.removeItem("isAdmin");
+  sessionStorage.removeItem("adminSession");
+  location.href = "/admin-login.html";
+}
+
 function editMatchFromAdmin(matchId) {
   sessionStorage.setItem("editMatchId", matchId);
   location.href = "/";

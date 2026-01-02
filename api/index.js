@@ -3,6 +3,7 @@ import "dotenv/config"
 import { createClient } from "@supabase/supabase-js";
 import path from "path";
 import { fileURLToPath } from "url";
+import bcrypt from 'bcryptjs'; // npm install bcryptjs 필요 
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -60,10 +61,11 @@ app.delete("/api/player/:id", async (req, res) => {
 });
 
 /* =========================
-   경기 저장
+   경기 저장 (로그 추가)
 ========================= */
 app.post("/api/match", async (req, res) => {
-  const { winner, created_at, map_name, ban_a, ban_b, entries } = req.body;
+  const { winner, created_at, map_name, ban_a, ban_b, entries,admin_id, admin_name } = req.body;
+
 
   const { data: match, error } = await supabase
     .from("matches")
@@ -88,6 +90,14 @@ app.post("/api/match", async (req, res) => {
   }));
 
   await supabase.from("match_players").insert(rows);
+  // 로그 기록
+  if (admin_id) {
+    await supabase.from("admin_logs").insert({
+      admin_id,
+      action: `경기 추가: ${map_name} (${winner} 승리) - ${admin_name}`
+    });
+  }
+
   res.json({ success: true });
 });
 
@@ -268,8 +278,141 @@ if (date) {
   res.json(rows);
 });
 
-//관리자 시작
+//관리자 시작 
 
+//ABOUT 관리자 itself
+
+/* =========================
+   관리자 로그인
+========================= */
+app.post("/api/admin/login", async (req, res) => {
+  const { username, password } = req.body;
+
+  const { data: admin, error } = await supabase
+    .from("admins")
+    .select("*")
+    .eq("username", username)
+    .single();
+
+  if (error || !admin) {
+    return res.json({ success: false, message: "아이디 또는 비밀번호가 잘못되었습니다" });
+  }
+
+  // 비밀번호 확인
+  const isValid = await bcrypt.compare(password, admin.password);
+  
+  if (!isValid) {
+    return res.json({ success: false, message: "아이디 또는 비밀번호가 잘못되었습니다" });
+  }
+
+  res.json({ 
+    success: true, 
+    admin: { 
+      id: admin.id, 
+      username: admin.username, 
+      name: admin.name 
+    } 
+  });
+});
+
+/* =========================
+   관리자 목록 조회
+========================= */
+app.get("/api/admins", async (req, res) => {
+  const { data, error } = await supabase
+    .from("admins")
+    .select("id, username, name, created_at")
+    .order("created_at");
+
+  if (error) return res.status(500).json(error);
+  res.json(data);
+});
+
+/* =========================
+   관리자 추가
+========================= */
+app.post("/api/admin/create", async (req, res) => {
+  const { username, password, name } = req.body;
+
+  if (!username || !password || !name) {
+    return res.json({ error: "모든 필드를 입력해주세요" });
+  }
+
+  // 중복 체크
+  const { data: exists } = await supabase
+    .from("admins")
+    .select("id")
+    .eq("username", username);
+
+  if (exists && exists.length > 0) {
+    return res.json({ error: "이미 존재하는 아이디입니다" });
+  }
+
+  // 비밀번호 해싱
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const { error } = await supabase
+    .from("admins")
+    .insert({ username, password: hashedPassword, name });
+
+  if (error) return res.status(500).json(error);
+  res.json({ success: true });
+});
+
+/* =========================
+   관리자 삭제
+========================= */
+app.delete("/api/admin/:id", async (req, res) => {
+  const { id } = req.params;
+
+  // 마지막 관리자 체크
+  const { data: admins } = await supabase
+    .from("admins")
+    .select("id");
+
+  if (admins.length <= 1) {
+    return res.json({ error: "최소 1명의 관리자가 필요합니다" });
+  }
+
+  await supabase.from("admins").delete().eq("id", id);
+  res.json({ success: true });
+});
+
+/* =========================
+   로그 기록
+========================= */
+app.post("/api/admin/log", async (req, res) => {
+  const { admin_id, action } = req.body;
+
+  const { error } = await supabase
+    .from("admin_logs")
+    .insert({ admin_id, action });
+
+  if (error) return res.status(500).json(error);
+  res.json({ success: true });
+});
+
+/* =========================
+   로그 조회
+========================= */
+app.get("/api/admin/logs", async (req, res) => {
+  const { data, error } = await supabase
+    .from("admin_logs")
+    .select(`
+      id,
+      action,
+      created_at,
+      admins (username, name)
+    `)
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error) return res.status(500).json(error);
+  res.json(data);
+});
+
+
+//관리자 경기 관리
 
 /* =========================
    관리자: 경기 목록
@@ -285,17 +428,7 @@ app.get("/api/admin/matches", async (req, res) => {
 });
 
 
-/* =========================
-   관리자: 경기 삭제
-========================= */
-app.delete("/api/admin/match/:id", async (req, res) => {
-  const { id } = req.params;
-  
-  await supabase.from("match_players").delete().eq("match_id", id);
-  await supabase.from("matches").delete().eq("id", id);
-  
-  res.json({ success: true });
-});
+
 
 /* =========================
    관리자: 경기 상세 조회 (수정용)
@@ -330,13 +463,12 @@ app.get("/api/admin/match/:id", async (req, res) => {
 });
 
 /* =========================
-   관리자: 경기 수정 
+   경기 수정 (로그 추가)
 ========================= */
 app.put("/api/admin/match-full/:id", async (req, res) => {
   const { id } = req.params;
-  const { winner, created_at, map_name, ban_a, ban_b, entries } = req.body;
+  const { winner, created_at, map_name, ban_a, ban_b, entries, admin_id, admin_name } = req.body;
 
-  // 경기 정보 업데이트
   const { error: matchError } = await supabase
     .from("matches")
     .update({
@@ -348,15 +480,10 @@ app.put("/api/admin/match-full/:id", async (req, res) => {
     })
     .eq("id", id);
 
-  if (matchError) {
-    console.error("경기 업데이트 실패:", matchError);
-    return res.status(500).json(matchError);
-  }
+  if (matchError) return res.status(500).json(matchError);
 
-  // 기존 참가자 삭제
   await supabase.from("match_players").delete().eq("match_id", id);
 
-  // 새 참가자 추가
   const rows = entries.map(e => ({
     match_id: Number(id),
     player_id: e.playerId,
@@ -365,17 +492,48 @@ app.put("/api/admin/match-full/:id", async (req, res) => {
     result: e.result
   }));
 
-  const { error: playersError } = await supabase
-    .from("match_players")
-    .insert(rows);
+  await supabase.from("match_players").insert(rows);
 
-  if (playersError) {
-    console.error("선수 추가 실패:", playersError);
-    return res.status(500).json(playersError);
+  // 로그 기록
+  if (admin_id) {
+    await supabase.from("admin_logs").insert({
+      admin_id,
+      action: `경기 수정: ID ${id} (${map_name}) - ${admin_name}`
+    });
   }
 
   res.json({ success: true });
 });
+
+/* =========================
+   경기 삭제 (로그 추가)
+========================= */
+app.delete("/api/admin/match/:id", async (req, res) => {
+  const { id } = req.params;
+  const { admin_id, admin_name } = req.query;
+
+  // 경기 정보 먼저 조회 (로그용)
+  const { data: match } = await supabase
+    .from("matches")
+    .select("map_name, winner")
+    .eq("id", id)
+    .single();
+
+  await supabase.from("match_players").delete().eq("match_id", id);
+  await supabase.from("matches").delete().eq("id", id);
+
+  // 로그 기록
+  if (admin_id && match) {
+    await supabase.from("admin_logs").insert({
+      admin_id,
+      action: `경기 삭제: ID ${id} (${match.map_name}) - ${admin_name}`
+    });
+  }
+
+  res.json({ success: true });
+});
+
+
 
 //완전 중요
 //local
