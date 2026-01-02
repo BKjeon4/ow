@@ -10,10 +10,14 @@
 <div id="topBar">
   <button id="loginBtn" onclick="goLogin()">🔐 관리자 로그인</button>
   <button id="logoutBtn" onclick="logout()">🔓 로그아웃</button>
+  <button id="backBtn" onclick="cancelEdit()" style="display: none; margin-bottom: 10px;">
+    ← 뒤로 가기
+  </button>
 </div>
 
 <!-- ===== 관리자 전용 영역 ===== -->
 <div id="adminArea">
+
 
   <label>
     📅 경기 날짜:
@@ -60,6 +64,8 @@
   <button onclick="setWinner('A')">TEAM A 승리</button>
   <button onclick="setWinner('B')">TEAM B 승리</button>
   <button id="saveBtn" onclick="saveMatch()">💾 저장</button>
+
+
 
   <br><br>
 <div id="adminNav">

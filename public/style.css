@@ -98,6 +98,8 @@ button:nth-of-type(3) {
   color: white;
 }
 
+
+
 /* ===== 입력 ===== */
 input {
   padding: 10px;
@@ -277,6 +279,21 @@ tr:hover {
   background-color: #7f1d1d;
 }
 
+
+/*수정 취소*/
+#backBtn {
+  background: #21ad7f;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#backBtn:hover {
+  background: #014d3a;
+}
 /* ===== 반응형 ===== */
 @media (max-width: 900px) {
   .team {

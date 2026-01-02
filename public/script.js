@@ -87,7 +87,13 @@ function editMatch(matchId) {
   isEditMode = true;
 
   // UI 전환
-  document.getElementById("saveBtn").textContent = "수정";
+  document.getElementById("saveBtn").textContent = "수정 완료";
+  
+  // 뒤로가기 버튼 표시
+  const backBtn = document.getElementById("backBtn");
+  if (backBtn) {
+    backBtn.style.display = "inline-block";
+  }
 
   // 관리자 버튼 숨김
   document.getElementById("adminNav")?.style.setProperty("display", "none");
@@ -105,16 +111,26 @@ function editMatch(matchId) {
       console.log("✅ 받은 경기 데이터:", match);
       console.log("✅ 받은 선수 데이터:", players);
 
+      // ⭐ 날짜 형식 변환 (ISO → datetime-local)
+      let formattedDate = match.created_at;
+      if (formattedDate.includes('T')) {
+        // "2025-12-27T10:30:00.000Z" → "2025-12-27T10:30"
+        formattedDate = formattedDate.slice(0, 16);
+      }
+
       // 기본 정보
-      document.getElementById("matchDate").value = match.created_at;
+      document.getElementById("matchDate").value = formattedDate;
       document.getElementById("mapName").value = match.map_name || "";
       document.getElementById("banA").value = match.ban_a || "";
       document.getElementById("banB").value = match.ban_b || "";
 
       winnerTeam = match.winner;
 
-      // 슬롯 초기화
-      slots.forEach(s => s.value = "");
+      // ⭐⭐⭐ 슬롯 완전 초기화 (중요!)
+      slots.forEach(s => {
+        s.value = "";
+        s.selectedIndex = 0;
+      });
 
       // 팀/역할별 그룹
       const grouped = {
@@ -138,23 +154,40 @@ function editMatch(matchId) {
 
       console.log("📊 그룹화된 데이터:", grouped);
 
-      // 순서대로 채우기
+      // ⭐⭐⭐ 슬롯을 배열로 변환하고 인덱스로 관리
+      const slotArray = Array.from(slots);
+      
+      // 각 팀/역할별로 슬롯 찾아서 채우기
       ["A", "B"].forEach(team => {
-        ["Tank", "DPS", "DPS", "Healer", "Healer"].forEach(role => {
-          const slot = [...slots].find(
-            s =>
-              s.dataset.team === team &&
-              s.dataset.role === role &&
-              !s.value
-          );
-          if (slot && grouped[team][role].length) {
-            slot.value = grouped[team][role].shift();
-            console.log(`✅ ${team} ${role} 슬롯에 ${slot.value} 배치`);
+        const roles = ["Tank", "DPS", "DPS", "Healer", "Healer"];
+        const roleCount = { Tank: 0, DPS: 0, Healer: 0 };
+
+        roles.forEach(role => {
+          // 해당 팀/역할의 N번째 슬롯 찾기
+          const slot = slotArray.find(s => {
+            if (s.dataset.team !== team || s.dataset.role !== role) {
+              return false;
+            }
+            
+            // 이미 채워진 슬롯은 건너뛰기 위해 카운트 확인
+            const currentIndex = roleCount[role];
+            const slotsOfSameRole = slotArray.filter(
+              x => x.dataset.team === team && x.dataset.role === role
+            );
+            
+            return s === slotsOfSameRole[currentIndex];
+          });
+
+          if (slot && grouped[team][role].length > 0) {
+            const playerId = grouped[team][role].shift();
+            slot.value = playerId;
+            console.log(`✅ ${team} ${role} 슬롯에 ${playerId} 배치`);
           }
+          
+          roleCount[role]++;
         });
       });
 
-      alert(`경기 ${matchId} 수정 모드`);
       window.scrollTo({ top: 0, behavior: "smooth" });
     })
     .catch(err => {
@@ -162,17 +195,50 @@ function editMatch(matchId) {
       alert("경기 정보를 불러오는데 실패했습니다: " + err.message);
       
       // 에러 시 원래 상태로 복구
-      isEditMode = false;
-      editingMatchId = null;
-      document.getElementById("saveBtn").textContent = "💾 저장";
-      document.getElementById("adminNav")?.style.setProperty("display", "block");
-      document.getElementById("dateSection")?.style.setProperty("display", "block");
-      document.getElementById("statsSection")?.style.setProperty("display", "block");
+      cancelEdit();
     });
 }
 
-
-
+/*************************************************
+ * 수정 모드 취소 (뒤로가기)
+ *************************************************/
+function cancelEdit() {
+  if (isEditMode) {
+    if (!confirm("수정을 취소하고 관리자 페이지로 돌아가시겠습니까?")) {
+      return;
+    }
+  }
+  
+  // 상태 초기화
+  isEditMode = false;
+  editingMatchId = null;
+  winnerTeam = null;
+  
+  // UI 복구
+  document.getElementById("saveBtn").textContent = "💾 저장";
+  const backBtn = document.getElementById("backBtn");
+  if (backBtn) {
+    backBtn.style.display = "none";
+  }
+  
+  // ⭐ 폼 완전 초기화
+  slots.forEach(slot => {
+    slot.value = "";
+    slot.selectedIndex = 0;
+  });
+  document.getElementById("matchDate").value = "";
+  document.getElementById("mapName").value = "";
+  document.getElementById("banA").value = "";
+  document.getElementById("banB").value = "";
+  
+  // 숨겼던 섹션 복구
+  document.getElementById("adminNav")?.style.setProperty("display", "block");
+  document.getElementById("dateSection")?.style.setProperty("display", "block");
+  document.getElementById("statsSection")?.style.setProperty("display", "block");
+  
+  // 관리자 페이지로 이동
+  location.href = "/admin.html";
+}
 
 
 /*************************************************
