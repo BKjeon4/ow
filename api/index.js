@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import path from "path";
 import { fileURLToPath } from "url";
 import bcrypt from 'bcryptjs'; // npm install bcryptjs 필요 
+import { Analytics } from "@vercel/analytics/next" //통계볼때 필요
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
