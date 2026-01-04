@@ -87,12 +87,37 @@
 <script>
 document.getElementById("adminName").textContent = adminInfo.name;
 
+// ⭐ URL 파라미터 확인해서 탭 자동 선택
+window.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const tab = urlParams.get('tab');
+  
+  if (tab) {
+    // URL에 tab 파라미터가 있으면 해당 탭 열기
+    showTab(tab);
+  } else {
+    // 없으면 기본 players 탭
+    loadPlayers();
+  }
+});
+
 function showTab(tabName) {
   document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
   document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
   
   document.getElementById(`tab-${tabName}`).classList.add("active");
-  event.target.classList.add("active");
+  
+  // ⭐ 해당 탭 버튼도 active 처리
+  const buttons = document.querySelectorAll(".tab-btn");
+  const tabIndex = {
+    'players': 0,
+    'matches': 1,
+    'admins': 2,
+    'logs': 3
+  };
+  if (tabIndex[tabName] !== undefined) {
+    buttons[tabIndex[tabName]].classList.add("active");
+  }
   
   if (tabName === 'admins') loadAdmins();
   if (tabName === 'logs') loadLogs();

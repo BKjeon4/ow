@@ -121,8 +121,8 @@ function editMatch(matchId) {
       // ⭐ 날짜 형식 변환 (ISO → datetime-local)
       let formattedDate = match.created_at;
       if (formattedDate.includes('T')) {
-        // "2025-12-27T10:30:00.000Z" → "2025-12-27T10:30"
-        formattedDate = formattedDate.slice(0, 16);
+        // "2025-12-27T10:30:00.000Z" → "2025-12-27"
+        formattedDate = formattedDate.slice(0, 10);
       }
 
       // 기본 정보
@@ -244,7 +244,7 @@ function cancelEdit() {
   document.getElementById("statsSection")?.style.setProperty("display", "block");
   
   // 관리자 페이지로 이동
-  location.href = "/admin.html";
+  location.href = "/admin.html?tab=matches"
 }
 
 
@@ -305,15 +305,12 @@ function saveMatch() {
     });
   }
 
-  // ⭐ datetime-local 값을 로컬 시간대 유지하면서 ISO 형식으로 변환
-  const localDate = new Date(matchDate);
-  const offsetMs = localDate.getTimezoneOffset() * 60000;
-  const utcDate = new Date(localDate.getTime() - offsetMs);
-  const created_at = utcDate.toISOString();
+  // ⭐ date 값을 오후 12시(정오)로 설정하여 날짜 변경 방지
+  // matchDate는 "2025-01-04" 형식
+  const created_at = matchDate + "T12:00:00.000Z"; // 정오로 고정
   
-  console.log("Input time:", matchDate);
-  console.log("Local Date:", localDate);
-  console.log("Convert to UTC:", created_at);
+  console.log("Input date:", matchDate);
+  console.log("Sending to server:", created_at);
   
   // ⭐ 모든 검사 통과 후 저장
   const body = {
@@ -342,7 +339,7 @@ function saveMatch() {
 
     // 수정 모드였으면 관리자 페이지로 이동
     if (isEditMode) {
-      location.href = "/admin.html";
+      location.href = "/admin.html?tab=matches"
       return;
     }
 
@@ -528,6 +525,11 @@ function openPlayerModal(playerId, playerName) {
   fetch(`/api/player/${playerId}/matches${query}`)
     .then(res => res.json())
     .then(rows => {
+      // ⭐ 날짜 기준 내림차순 정렬 (최신 경기가 위로)
+      rows.sort((a, b) => {
+        return new Date(a.created_at) - new Date(b.created_at);
+      });
+
       let html = `
         <tr>
           <th>Date</th>
@@ -538,9 +540,12 @@ function openPlayerModal(playerId, playerName) {
       `;
 
       rows.forEach(r => {
+        // ⭐ 날짜만 표시 (시간 제거)
+        const dateOnly = r.created_at.slice(0, 10);
+        
         html += `
           <tr>
-            <td>${r.created_at}</td>
+            <td>${dateOnly}</td>
             <td>TEAM ${r.team}</td>
             <td>${r.role}</td>
             <td>${r.result}</td>

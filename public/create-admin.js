@@ -7,27 +7,27 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-async function createInitialAdmin() {
+async function updateAdminPassword() {
   const username = "admin";
-  const password = "admin123"; 
-  const name = "최고관리자";
+  const newPassword = "mcbscrimbbbb123"; 
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
 
   const { data, error } = await supabase
     .from("admins")
-    .insert({ username, password: hashedPassword, name })
+    .update({ password: hashedPassword })
+    .eq("username", username)
     .select();
 
   if (error) {
-    console.error("에러:", error);
+    console.error("❌ 에러:", error);
   } else {
-    console.log("✅ 초기 관리자 생성 완료:", data);
+    console.log("✅ 비밀번호 변경 완료:", data);
     console.log("아이디:", username);
-    console.log("비밀번호:", password);
+    console.log("새 비밀번호:", newPassword);
   }
 
   process.exit();
 }
 
-createInitialAdmin();
+updateAdminPassword();

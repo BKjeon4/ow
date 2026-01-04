@@ -61,17 +61,26 @@ app.delete("/api/player/:id", async (req, res) => {
 });
 
 /* =========================
-   경기 저장 (로그 추가)
+   경기 저장 (로그 추가) - 토론토 시간대 처리
 ========================= */
 app.post("/api/match", async (req, res) => {
-  const { winner, created_at, map_name, ban_a, ban_b, entries,admin_id, admin_name } = req.body;
+  const { winner, created_at, map_name, ban_a, ban_b, entries, admin_id, admin_name } = req.body;
 
+  // 토론토 시간 → UTC 변환
+  let finalDateTime = created_at;
+  if (!created_at.endsWith('Z')) {
+    // 로컬 시간으로 들어온 경우 토론토 시간으로 간주
+    const torontoDate = new Date(created_at);
+    // 토론토는 UTC-5 (EST) 또는 UTC-4 (EDT)
+    // JavaScript Date는 자동으로 로컬 시간대를 인식하므로 toISOString()만 호출
+    finalDateTime = new Date(created_at + (created_at.length === 16 ? ':00' : '')).toISOString();
+  }
 
   const { data: match, error } = await supabase
     .from("matches")
     .insert({
       winner,
-      created_at,
+      created_at: finalDateTime,
       map_name,
       ban_a,
       ban_b
@@ -90,6 +99,7 @@ app.post("/api/match", async (req, res) => {
   }));
 
   await supabase.from("match_players").insert(rows);
+  
   // 로그 기록
   if (admin_id) {
     await supabase.from("admin_logs").insert({
@@ -100,7 +110,6 @@ app.post("/api/match", async (req, res) => {
 
   res.json({ success: true });
 });
-
 /* =========================
    통계
 ========================= */
@@ -463,17 +472,23 @@ app.get("/api/admin/match/:id", async (req, res) => {
 });
 
 /* =========================
-   경기 수정 (로그 추가)
+   경기 수정 (로그 추가) - 토론토 시간대 처리
 ========================= */
 app.put("/api/admin/match-full/:id", async (req, res) => {
   const { id } = req.params;
   const { winner, created_at, map_name, ban_a, ban_b, entries, admin_id, admin_name } = req.body;
 
+  // 토론토 시간 → UTC 변환
+  let finalDateTime = created_at;
+  if (!created_at.endsWith('Z')) {
+    finalDateTime = new Date(created_at + (created_at.length === 16 ? ':00' : '')).toISOString();
+  }
+
   const { error: matchError } = await supabase
     .from("matches")
     .update({
       winner,
-      created_at,
+      created_at: finalDateTime,
       map_name,
       ban_a,
       ban_b
@@ -543,7 +558,7 @@ app.delete("/api/admin/match/:id", async (req, res) => {
 //  });
 
 
-// vercel
+// // vercel
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
