@@ -92,12 +92,13 @@ The goal was to simulate a realistic internal tool rather than a consumer-facing
 git clone https://github.com/BKjeon4/ow.git
 cd ow
 npm install
-npm run dev```
+npm run dev
+```
 
 The application will be available at:
 
 http://localhost:3000
----
+
 
 ## Docker
 To build and run using Docker:
